@@ -100,7 +100,7 @@ function parseCards(csv: string): ParsedCard[] {
 }
 
 export class CsvImportService {
-  static async importDeck(input: { title: string; description?: string; csv: string }) {
+  static async importDeck(input: { ownerId: string; title: string; description?: string; csv: string }) {
     const title = input.title.trim();
     const description = input.description?.trim() ?? '';
     if (!title) throw new Error('Podaj nazwę zestawu.');
@@ -110,6 +110,7 @@ export class CsvImportService {
     const cards = parseCards(input.csv);
     const deck = await prisma.deck.create({
       data: {
+        ownerId: input.ownerId,
         title,
         description: description || null,
         cards: { create: cards.map((card) => ({

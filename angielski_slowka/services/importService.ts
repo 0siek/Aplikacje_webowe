@@ -33,7 +33,7 @@ function validateDeck(value: unknown, index: number): ImportedDeck {
 
 /** Waliduje i importuje JSON z adaptera Google Drive albo z lokalnego pliku. */
 export class ImportService {
-  static async importFromJsonString(jsonString: string): Promise<number> {
+  static async importFromJsonString(jsonString: string, ownerId: string): Promise<number> {
     let parsed: unknown;
     try { parsed = JSON.parse(jsonString); }
     catch { throw new Error('Nieprawidłowy plik JSON.'); }
@@ -44,6 +44,7 @@ export class ImportService {
 
     await prisma.$transaction(decks.map((deck) => prisma.deck.create({
       data: {
+        ownerId,
         title: deck.title,
         description: deck.description || null,
         cards: { create: deck.cards.map((card) => ({

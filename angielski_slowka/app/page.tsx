@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { getDecks } from '@/actions/deckActions';
+import { signOut } from '@/actions/authActions';
 
 export const instant = false;
 
@@ -11,6 +13,7 @@ const illustrations = [
 ];
 
 export default async function DashboardPage() {
+  await connection();
   const decks = await getDecks();
   const cardCount = decks.reduce((sum, deck) => sum + deck.totalCards, 0);
   const mastered = decks.reduce((sum, deck) => sum + deck.masteredCards, 0);
@@ -21,7 +24,7 @@ export default async function DashboardPage() {
       <Link href="/" className="flex items-center gap-2.5"><span className="grid h-[35px] w-[35px] place-items-center rounded-[12px] bg-[#1f4033] text-[17px] font-bold text-[#d2f36b]">s.</span><span className="text-[18px] font-extrabold tracking-[-.6px] text-[#1f4033]">słówka<span className="text-[#76a25c]">.</span></span></Link>
       <nav className="hidden items-center gap-7 sm:flex"><Link href="#zestawy" className="text-[12px] font-semibold text-[#4f5d53]">Moje zestawy</Link><Link href="#postepy" className="text-[12px] font-medium text-[#7c887f] hover:text-[#405344]">Postępy</Link></nav>
       <div className="flex items-center gap-2"><Link href="/decks/import" className="flex h-[39px] items-center gap-1.5 rounded-[11px] border border-[#dce6d9] bg-white px-2.5 text-[10px] font-bold text-[#4e704b] transition hover:bg-[#f1f6ee] sm:px-3 sm:text-[11px]">↓ CSV</Link><Link href="/decks/new" className="flex h-[39px] items-center gap-2 rounded-[11px] bg-[#244a35] px-3.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-[#193d2a] sm:px-4 sm:text-[12px]"><span className="text-[17px] leading-none">+</span><span className="hidden xs:inline">Nowy zestaw</span><span className="xs:hidden">Utwórz</span></Link></div>
-    </div></header>
+    </div><form action={signOut} className="mx-auto flex max-w-[1240px] justify-end px-4 pb-2 sm:px-8"><button className="text-[10px] font-semibold text-[#7c887f] hover:text-[#405344]">Wyloguj</button></form></header>
     <div className="mx-auto max-w-[1240px] px-4 sm:px-8">
       <section className="grid gap-7 pb-7 pt-7 sm:pt-10 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-12 lg:pb-10 lg:pt-12">
         <div><span className="inline-flex items-center gap-2 rounded-full border border-[#dce9d5] bg-[#edf5e9] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[.9px] text-[#60805e]"><span className="h-1.5 w-1.5 rounded-full bg-[#83aa75]"/>TWÓJ KĄCIK DO NAUKI</span>

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { CsvImportService } from '@/services/csvImportService';
+import { requireCurrentUserId } from '@/lib/auth/server';
 
 export type CsvImportState =
   | { status: 'idle' }
@@ -9,6 +10,7 @@ export type CsvImportState =
   | { status: 'success'; deckId: string; cardCount: number };
 
 export async function importDeckFromCsv(_previousState: CsvImportState, formData: FormData): Promise<CsvImportState> {
+  const ownerId = await requireCurrentUserId();
   if (!process.env.POSTGRES_PRISMA_URL && !process.env.DATABASE_URL) {
     return { status: 'error', message: 'Import zestawów wymaga skonfigurowanej bazy PostgreSQL.' };
   }
@@ -24,7 +26,7 @@ export async function importDeckFromCsv(_previousState: CsvImportState, formData
   if (entry.size > 512 * 1024) return { status: 'error', message: 'Plik CSV może mieć maksymalnie 512 KB.' };
 
   try {
-    const result = await CsvImportService.importDeck({ title, description, csv: await entry.text() });
+    const result = await CsvImportService.importDeck({ ownerId, title, description, csv: await entry.text() });
     revalidatePath('/');
     revalidatePath(`/decks/${result.deckId}/edit`);
     return { status: 'success', ...result };
