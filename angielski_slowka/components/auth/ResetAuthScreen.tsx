@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { authClient } from '@/lib/auth/client';
 import { getSafeRedirectTo } from '@better-auth-ui/core';
 import { BookOpen } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -44,10 +45,13 @@ export default function ResetAuthScreen({ view }: { view: 'forgotPassword' | 're
 
   return <main className="grid min-h-screen place-items-center bg-background px-4 py-10">
     <section className="w-full max-w-md">
-      <Link href="/auth/sign-in" className="mx-auto mb-6 flex w-fit items-center gap-2.5 text-lg font-semibold tracking-tight">
-        <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground"><BookOpen className="size-[18px]" /></span>
-        <span>słówka<span className="text-primary">.</span></span>
-      </Link>
+      <div className="mb-6 flex items-center justify-between">
+        <Link href="/auth/sign-in" className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
+          <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground"><BookOpen className="size-[18px]" /></span>
+          <span>słówka<span className="text-primary">.</span></span>
+        </Link>
+        <ThemeToggle />
+      </div>
       <AuthProvider
         authClient={authClient}
         emailAndPassword={{ enabled: true, forgotPassword: true, minPasswordLength: 8, maxPasswordLength: 128, requireEmailVerification: false }}

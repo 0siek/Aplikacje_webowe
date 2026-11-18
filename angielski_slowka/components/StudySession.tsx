@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import ThemeToggle from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 import type { StudyCard, StudyDeck } from '@/lib/types';
 
@@ -135,7 +136,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft className="size-4" /><span className="hidden sm:inline">Wróć do zestawów</span></Link>
         <div className="min-w-0 text-center"><p className="truncate text-xs text-muted-foreground">{isTest ? 'Test' : isSprint ? 'Szybki sprint' : 'Tryb nauki'}</p><p className="max-w-[42vw] truncate text-sm font-medium">{deck.title}</p></div>
-        <Link href="/" aria-label="Zamknij naukę" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'text-muted-foreground')}><X className="size-4" /></Link>
+        <div className="flex items-center gap-1"><ThemeToggle /><Link href="/" aria-label="Zamknij naukę" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'text-muted-foreground')}><X className="size-4" /></Link></div>
       </div>
     </header>
 

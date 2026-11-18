@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { BookOpen, FileUp, LogOut, Plus } from 'lucide-react';
 import { signOut } from '@/actions/authActions';
 import { Button, buttonVariants } from '@/components/ui/button';
+import ThemeToggle from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 
 export default function AppHeader({ active }: { active?: 'decks' | 'import' }) {
@@ -23,6 +24,7 @@ export default function AppHeader({ active }: { active?: 'decks' | 'import' }) {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Link href="/decks/import" aria-label="Importuj zestaw z pliku CSV" className={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'sm:hidden')}>
             <FileUp />
           </Link>

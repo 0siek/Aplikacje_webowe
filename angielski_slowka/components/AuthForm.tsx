@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authClient } from '@/lib/auth/client';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const isSignUp = mode === 'sign-up';
@@ -63,6 +64,7 @@ export default function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
       </aside>
 
       <section className="flex min-h-screen flex-col px-4 py-5 sm:px-8 lg:px-12">
+        <div className="mx-auto flex w-full max-w-md justify-end"><ThemeToggle /></div>
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-8">
           <Link href="/" className="mb-6 inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground lg:hidden"><ArrowLeft className="size-4" /> Strona główna</Link>
           <Card className="border-0 shadow-none sm:border sm:shadow-sm">

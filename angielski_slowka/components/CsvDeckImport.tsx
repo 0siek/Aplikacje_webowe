@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const initialState = { status: 'idle' as const };
 
@@ -20,7 +21,7 @@ export default function CsvDeckImport() {
   return (
     <main className="min-h-screen bg-background">
       <header className="border-b bg-background/90">
-        <div className="mx-auto flex h-14 max-w-3xl items-center px-4 sm:px-6"><Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft className="size-4" /> Moje zestawy</Link></div>
+        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 sm:px-6"><Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft className="size-4" /> Moje zestawy</Link><ThemeToggle /></div>
       </header>
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="mb-6 sm:mb-8">
