@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f8f5;
+  --foreground: #18251f;
+  --muted: #78857e;
+  --line: #e8ece8;
+  --green: #1f4033;
+  --mint: #dff0df;
+  --lime: #d2f36b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html { min-height: 100%; background: var(--background); }
+body { min-height: 100vh; margin: 0; background: var(--background); color: var(--foreground); font-family: Arial, Helvetica, sans-serif; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+.card-perspective { perspective: 1200px; }
+.card-flipper { transform-style: preserve-3d; transition: transform .55s cubic-bezier(.2,.75,.2,1); }
+.card-flipper.is-flipped { transform: rotateY(180deg); }
+.card-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.card-back { transform: rotateY(180deg); }
+.safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+::selection { background: #d2f36b; color: #18251f; }
