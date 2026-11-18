@@ -1,15 +1,46 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
-import { signInWithEmail, signUpWithEmail, type AuthFormState } from '@/actions/authActions';
-
-const initialState: AuthFormState = null;
+import { useRouter } from 'next/navigation';
+import { useState, type FormEvent } from 'react';
+import { authClient } from '@/lib/auth/client';
+import { claimLegacyDecks } from '@/actions/authActions';
 
 export default function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const isSignUp = mode === 'sign-up';
-  const action = isSignUp ? signUpWithEmail : signInWithEmail;
-  const [state, formAction, pending] = useActionState(action, initialState);
+  const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState('');
+  const [pending, setPending] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrorMessage('');
+    setPending(true);
+
+    const formData = new FormData(event.currentTarget);
+    const name = String(formData.get('name') ?? '').trim();
+    const email = String(formData.get('email') ?? '').trim().toLowerCase();
+    const password = String(formData.get('password') ?? '');
+
+    try {
+      const result = isSignUp
+        ? await authClient.signUp.email({ email, name, password })
+        : await authClient.signIn.email({ email, password });
+
+      if (result.error) {
+        setErrorMessage(result.error.message || 'Nie udało się uwierzytelnić. Sprawdź dane i spróbuj ponownie.');
+        return;
+      }
+
+      if (isSignUp) await claimLegacyDecks();
+      router.replace('/');
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Wystąpił błąd. Spróbuj ponownie.');
+    } finally {
+      setPending(false);
+    }
+  }
 
   return <main className="grid min-h-screen place-items-center bg-[#f7f8f5] px-4 py-10">
     <section className="w-full max-w-[420px] rounded-[20px] border border-[#e6ebe4] bg-white p-6 shadow-[0_12px_38px_rgba(39,60,44,.07)] sm:p-8">
@@ -21,7 +52,7 @@ export default function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
       <h1 className="mt-7 text-[25px] font-extrabold tracking-[-.7px] text-[#293e30]">{isSignUp ? 'Załóż konto' : 'Zaloguj się'}</h1>
       <p className="mt-1.5 text-[12px] leading-relaxed text-[#7f8c82]">{isSignUp ? 'Twoje zestawy i postępy będą zapisane na Twoim koncie.' : 'Zaloguj się, aby otworzyć swoje zestawy.'}</p>
 
-      <form action={formAction} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         {isSignUp && <label className="block text-[10px] font-bold text-[#56655a]">Imię lub nazwa
           <input name="name" required minLength={2} maxLength={80} autoComplete="name" placeholder="np. Patrycja" className="mt-1.5 h-[43px] w-full rounded-[10px] border border-[#e5eae3] bg-[#fcfdfb] px-3.5 text-[12px] font-medium text-[#36473b] outline-none placeholder:font-normal placeholder:text-[#a4ada5] focus:border-[#95b58b]" />
         </label>}
@@ -32,7 +63,7 @@ export default function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           <input name="password" type="password" required minLength={8} maxLength={128} autoComplete={isSignUp ? 'new-password' : 'current-password'} placeholder="Co najmniej 8 znaków" className="mt-1.5 h-[43px] w-full rounded-[10px] border border-[#e5eae3] bg-[#fcfdfb] px-3.5 text-[12px] font-medium text-[#36473b] outline-none placeholder:font-normal placeholder:text-[#a4ada5] focus:border-[#95b58b]" />
         </label>
 
-        {state?.error && <p role="alert" className="rounded-lg bg-[#fff1ed] px-3 py-2.5 text-[11px] text-[#a75543]">{state.error}</p>}
+        {errorMessage && <p role="alert" className="rounded-lg bg-[#fff1ed] px-3 py-2.5 text-[11px] text-[#a75543]">{errorMessage}</p>}
 
         <button disabled={pending} className="h-[43px] w-full rounded-[10px] bg-[#244a35] px-5 text-[11px] font-bold text-white transition hover:bg-[#193d2a] disabled:opacity-50">
           {pending ? 'Chwileczkę…' : isSignUp ? 'Utwórz konto' : 'Zaloguj się'}
