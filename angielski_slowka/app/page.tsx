@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { getDecks } from '@/actions/deckActions';
 
+export const instant = false;
+
 const illustrations = [
   { icon: '✦', bg: 'bg-[#edf3e7]', color: 'text-[#6d8963]' },
   { icon: '↗', bg: 'bg-[#f4eee7]', color: 'text-[#a9805c]' },
