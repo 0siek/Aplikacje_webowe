@@ -5,13 +5,12 @@ import { Auth } from '@/components/auth/auth';
 import { Toaster } from '@/components/ui/sonner';
 import { authClient } from '@/lib/auth/client';
 import { getSafeRedirectTo } from '@better-auth-ui/core';
+import { BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const polishLocalization = {
-  errors: {
-    generic: 'Nie udało się wykonać tej czynności. Spróbuj ponownie.',
-  },
+  errors: { generic: 'Nie udało się wykonać tej czynności. Spróbuj ponownie.' },
   auth: {
     email: 'Adres e-mail',
     emailPlaceholder: 'ty@example.com',
@@ -43,11 +42,11 @@ const polishLocalization = {
 export default function ResetAuthScreen({ view }: { view: 'forgotPassword' | 'resetPassword' | 'resetLinkSent' }) {
   const router = useRouter();
 
-  return <main className="grid min-h-screen place-items-center bg-[#f7f8f5] px-4 py-10">
-    <section className="w-full max-w-[420px]">
-      <Link href="/auth/sign-in" className="mx-auto mb-5 flex w-fit items-center gap-2.5">
-        <span className="grid h-[35px] w-[35px] place-items-center rounded-[12px] bg-[#1f4033] text-[17px] font-bold text-[#d2f36b]">s.</span>
-        <span className="text-[18px] font-extrabold tracking-[-.6px] text-[#1f4033]">słówka<span className="text-[#76a25c]">.</span></span>
+  return <main className="grid min-h-screen place-items-center bg-background px-4 py-10">
+    <section className="w-full max-w-md">
+      <Link href="/auth/sign-in" className="mx-auto mb-6 flex w-fit items-center gap-2.5 text-lg font-semibold tracking-tight">
+        <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground"><BookOpen className="size-[18px]" /></span>
+        <span>słówka<span className="text-primary">.</span></span>
       </Link>
       <AuthProvider
         authClient={authClient}
@@ -62,7 +61,7 @@ export default function ResetAuthScreen({ view }: { view: 'forgotPassword' | 're
         }}
         redirectTo="/auth/sign-in"
       >
-        <Auth view={view} className="border-[#e6ebe4] shadow-[0_12px_38px_rgba(39,60,44,.07)]" />
+        <Auth view={view} className="rounded-2xl border bg-card shadow-sm" />
         <Toaster />
       </AuthProvider>
     </section>

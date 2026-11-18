@@ -3,8 +3,16 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ArrowLeft, BookOpen, Check, Plus, Trash2 } from 'lucide-react';
 import { createCard, createDeck, deleteCard, deleteDeck, saveDeck } from '@/actions/deckActions';
 import type { StudyDeck } from '@/lib/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function DeckEditor({ deck, isNew }: { deck?: StudyDeck; isNew: boolean }) {
   const [error, setError] = useState('');
@@ -13,26 +21,80 @@ export default function DeckEditor({ deck, isNew }: { deck?: StudyDeck; isNew: b
   const router = useRouter();
 
   async function run(action: () => Promise<void>) {
-    setError(''); setPending(true);
-    try { await action(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Nie udało się zapisać zmian.'); }
+    setError('');
+    setPending(true);
+    try { await action(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Nie udało się zapisać zmian.'); }
     finally { setPending(false); }
   }
 
-  return <main className="min-h-screen bg-[#f7f8f5]">
-    <header className="border-b border-[#e8ece8] bg-white/75"><div className="mx-auto flex h-[64px] max-w-[950px] items-center justify-between px-4 sm:px-8"><Link href="/" className="flex items-center gap-2 text-[13px] font-semibold text-[#58665d] hover:text-[#253f2e]">← <span>Wróć do zestawów</span></Link><span className="text-[12px] font-bold text-[#34483a]">{isNew ? 'Nowy zestaw' : 'Edytuj zestaw'}</span><span className="w-[94px]"/></div></header>
-    <div className="mx-auto max-w-[780px] px-4 py-8 sm:px-8 sm:py-11">
-      <div className="mb-6"><span className="text-[9px] font-bold uppercase tracking-[1.1px] text-[#7e967a]">TWOJA KOLEKCJA SŁÓWEK</span><h1 className="mt-2 text-[27px] font-extrabold tracking-[-.8px] text-[#293e30]">{isNew ? 'Stwórz nowy zestaw' : 'Dopracuj swój zestaw'}</h1><p className="mt-1.5 text-[12px] leading-relaxed text-[#7f8c82]">Nadaj mu nazwę, dodaj słówka i ruszaj do nauki.</p></div>
-      <form action={(formData) => run(() => isNew ? createDeck(formData) : saveDeck(deck!.id, formData))} className="rounded-[17px] border border-[#e6ebe4] bg-white p-4 shadow-[0_5px_18px_rgba(39,60,44,.035)] sm:p-6">
-        <div className="mb-4 flex items-center gap-3"><span className="grid h-[34px] w-[34px] place-items-center rounded-[11px] bg-[#edf4e9] text-[#63825b]">✎</span><div><h2 className="text-[14px] font-bold text-[#394b3e]">Podstawowe informacje</h2><p className="text-[10px] text-[#89958c]">Opowiedz krótko, czego dotyczy zestaw.</p></div></div>
-        <label className="mb-1.5 block text-[10px] font-bold text-[#56655a]">Nazwa zestawu <span className="text-[#b36a56]">*</span><input name="title" required maxLength={90} defaultValue={deck?.title} placeholder="np. Angielski w podróży" className="mt-1.5 h-[43px] w-full rounded-[10px] border border-[#e5eae3] bg-[#fcfdfb] px-3.5 text-[12px] font-medium text-[#36473b] outline-none placeholder:font-normal placeholder:text-[#a4ada5] focus:border-[#95b58b]"/></label>
-        <label className="mt-4 block text-[10px] font-bold text-[#56655a]">Opis <span className="font-normal text-[#9ba49c]">(opcjonalny)</span><textarea name="description" maxLength={240} rows={2} defaultValue={deck?.description ?? ''} placeholder="Kilka słów o tym zestawie…" className="mt-1.5 w-full resize-y rounded-[10px] border border-[#e5eae3] bg-[#fcfdfb] px-3.5 py-3 text-[12px] font-normal text-[#36473b] outline-none placeholder:text-[#a4ada5] focus:border-[#95b58b]"/></label>
-        {error && <p role="alert" className="mt-3 rounded-lg bg-[#fff1ed] px-3 py-2 text-[11px] text-[#a75543]">{error}</p>}
-        <div className="mt-5 flex items-center justify-between border-t border-[#edf0eb] pt-4"><div>{!isNew && <button type="button" onClick={() => setShowDelete(!showDelete)} className="text-[10px] font-semibold text-[#a26455] hover:text-[#843a2f]">Usuń zestaw</button>}{showDelete && <span className="ml-2 inline-flex gap-2"><span className="text-[10px] text-[#7b625e]">Na pewno?</span><button type="button" onClick={() => run(async () => { await deleteDeck(deck!.id); router.push('/'); })} className="text-[10px] font-bold text-[#a13f33]">Tak</button><button type="button" onClick={() => setShowDelete(false)} className="text-[10px] text-[#758078]">Nie</button></span>}</div><button disabled={pending} className="h-[39px] rounded-[10px] bg-[#244a35] px-5 text-[11px] font-bold text-white transition hover:bg-[#193d2a] disabled:opacity-50">{pending ? 'Zapisywanie…' : isNew ? 'Utwórz zestaw →' : 'Zapisz zmiany →'}</button></div>
-      </form>
-      {!isNew && deck && <section className="mt-6 rounded-[17px] border border-[#e6ebe4] bg-white p-4 shadow-[0_5px_18px_rgba(39,60,44,.035)] sm:p-6"><div className="mb-4 flex items-center justify-between"><div className="flex items-center gap-3"><span className="grid h-[34px] w-[34px] place-items-center rounded-[11px] bg-[#f4efe5] text-[#997f56]">▤</span><div><h2 className="text-[14px] font-bold text-[#394b3e]">Fiszki</h2><p className="text-[10px] text-[#89958c]">{deck.cards.length} {deck.cards.length === 1 ? 'karta' : 'kart'} w zestawie</p></div></div><span className="rounded-full bg-[#f2f5ef] px-2.5 py-1 text-[9px] font-semibold text-[#69796a]">EN → PL / EN</span></div>
-        <div className="mb-5 space-y-2">{deck.cards.map((card) => <div key={card.id} className="flex items-start gap-3 rounded-[11px] border border-[#edf0eb] bg-[#fcfdfb] p-3"><div className="min-w-0 flex-1"><div className="break-words text-[12px] font-bold text-[#3a4d3e]">{card.front}</div><div className="mt-1 break-words text-[10px] leading-relaxed text-[#79867c]">{card.back}</div></div><span className="rounded-full bg-[#edf4e9] px-2 py-1 text-[8px] font-semibold text-[#67815f]">{card.cardType === 'DEFINITION' ? 'DEFINICJA' : 'TŁUMACZENIE'}</span><button type="button" onClick={() => run(() => deleteCard(deck.id, card.id))} aria-label={`Usuń fiszkę ${card.front}`} className="ml-1 text-[14px] leading-none text-[#a4aaa4] hover:text-[#a75043]">×</button></div>)}</div>
-        <form action={(formData) => run(() => createCard(deck.id, formData))} className="rounded-[13px] bg-[#f5f8f3] p-3.5 sm:p-4"><h3 className="mb-3 text-[11px] font-bold text-[#4d604f]">Dodaj fiszkę</h3><div className="grid gap-2.5 sm:grid-cols-2"><label className="text-[9px] font-bold text-[#69776c]">Słówko po angielsku<input name="front" required maxLength={180} placeholder="e.g. resilient" className="mt-1 h-[38px] w-full rounded-[9px] border border-[#e4eae0] bg-white px-3 text-[11px] font-normal text-[#36473b] outline-none focus:border-[#95b58b]"/></label><label className="text-[9px] font-bold text-[#69776c]">Tłumaczenie lub definicja<textarea name="back" required maxLength={1000} rows={1} placeholder="np. odporny, wytrwały" className="mt-1 min-h-[38px] w-full resize-y rounded-[9px] border border-[#e4eae0] bg-white px-3 py-2 text-[11px] font-normal text-[#36473b] outline-none focus:border-[#95b58b]"/></label><label className="text-[9px] font-bold text-[#69776c] sm:col-span-2">Typ odpowiedzi<select name="cardType" defaultValue="TRANSLATION" className="mt-1 h-[37px] w-full rounded-[9px] border border-[#e4eae0] bg-white px-3 text-[11px] font-medium text-[#526257] outline-none focus:border-[#95b58b]"><option value="TRANSLATION">Słówko angielskie → tłumaczenie polskie</option><option value="DEFINITION">Słówko angielskie → definicja po angielsku</option></select></label></div><div className="mt-3 flex items-center justify-between"><span className="text-[9px] text-[#839087]">Dodaj dowolną liczbę fiszek.</span><button disabled={pending} className="h-[35px] rounded-[9px] bg-[#78976b] px-4 text-[10px] font-bold text-white hover:bg-[#618555] disabled:opacity-50">+ Dodaj fiszkę</button></div></form></section>}
-      {!isNew && deck && <div className="mt-5 flex justify-end"><Link href={`/decks/${deck.id}/study`} className="rounded-[11px] bg-[#244a35] px-5 py-3 text-[11px] font-bold text-white hover:bg-[#193d2a]">Przejdź do nauki →</Link></div>}
-    </div>
-  </main>;
+  return (
+    <main className="min-h-screen bg-background">
+      <header className="border-b bg-background/90">
+        <div className="mx-auto flex h-14 max-w-4xl items-center px-4 sm:px-6">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft className="size-4" /> Moje zestawy</Link>
+        </div>
+      </header>
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mb-6 sm:mb-8">
+          <Badge variant="secondary">KOLEKCJA SŁÓWEK</Badge>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{isNew ? 'Utwórz zestaw' : 'Edytuj zestaw'}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Dodaj słówka i definicje, a potem ćwicz je w wybranym trybie.</p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base"><BookOpen className="size-4 text-primary" /> Informacje o zestawie</CardTitle>
+            <CardDescription>Nazwij swoją kolekcję i dodaj krótki opis.</CardDescription>
+          </CardHeader>
+          <form action={(formData) => run(() => isNew ? createDeck(formData) : saveDeck(deck!.id, formData))}>
+            <CardContent className="space-y-5">
+              <div className="space-y-2"><Label htmlFor="deck-title">Nazwa zestawu <span className="text-destructive">*</span></Label><Input id="deck-title" name="title" required maxLength={90} defaultValue={deck?.title} placeholder="np. Angielski w podróży" /></div>
+              <div className="space-y-2"><Label htmlFor="deck-description">Opis <span className="font-normal text-muted-foreground">(opcjonalnie)</span></Label><Textarea id="deck-description" name="description" maxLength={240} rows={3} defaultValue={deck?.description ?? ''} placeholder="Czego dotyczy ten zestaw?" /></div>
+              {error && <Alert variant="destructive"><AlertTitle>Nie udało się zapisać</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+            </CardContent>
+            <CardFooter className="justify-between gap-3">
+              {!isNew ? <div className="flex items-center gap-2">
+                {showDelete ? <><span className="text-sm text-muted-foreground">Usunąć zestaw?</span><Button type="button" size="sm" variant="destructive" disabled={pending} onClick={() => run(async () => { await deleteDeck(deck!.id); router.push('/'); })}>Tak, usuń</Button><Button type="button" size="sm" variant="ghost" onClick={() => setShowDelete(false)}>Anuluj</Button></> : <Button type="button" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setShowDelete(true)}><Trash2 data-icon="inline-start" /> Usuń zestaw</Button>}
+              </div> : <span />}
+              <Button type="submit" disabled={pending}>{pending ? 'Zapisywanie…' : isNew ? 'Utwórz zestaw' : 'Zapisz zmiany'} {!pending && <Check data-icon="inline-end" />}</Button>
+            </CardFooter>
+          </form>
+        </Card>
+
+        {!isNew && deck && <section className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div><CardTitle className="flex items-center gap-2 text-base"><LayersIcon /> Fiszki</CardTitle><CardDescription className="mt-1">{deck.cards.length} {deck.cards.length === 1 ? 'karta' : 'kart'} w zestawie</CardDescription></div>
+              <Badge variant="outline">Angielski → polski / definicja</Badge>
+            </CardHeader>
+            <CardContent>
+              {deck.cards.length ? <div className="divide-y rounded-xl border">
+                {deck.cards.map((card) => <div key={card.id} className="flex items-start gap-3 p-3.5 sm:p-4">
+                  <div className="min-w-0 flex-1"><p className="break-words text-sm font-medium">{card.front}</p><p className="mt-1 break-words text-sm text-muted-foreground">{card.back}</p></div>
+                  <Badge variant="secondary" className="hidden shrink-0 sm:inline-flex">{card.cardType === 'DEFINITION' ? 'Definicja' : 'Tłumaczenie'}</Badge>
+                  <Button type="button" variant="ghost" size="icon-sm" aria-label={`Usuń fiszkę ${card.front}`} onClick={() => run(() => deleteCard(deck.id, card.id))}><Trash2 className="size-4 text-muted-foreground" /></Button>
+                </div>)}
+              </div> : <p className="rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">Nie ma jeszcze fiszek. Dodaj pierwszą poniżej.</p>}
+
+              <form action={(formData) => run(() => createCard(deck.id, formData))} className="mt-5 rounded-xl bg-muted/60 p-4 sm:p-5">
+                <h3 className="mb-4 flex items-center gap-2 text-sm font-medium"><Plus className="size-4 text-primary" /> Dodaj fiszkę</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2"><Label htmlFor="card-front">Słówko po angielsku</Label><Input id="card-front" name="front" required maxLength={180} placeholder="e.g. resilient" /></div>
+                  <div className="space-y-2"><Label htmlFor="card-back">Tłumaczenie lub definicja</Label><Textarea id="card-back" name="back" required maxLength={1000} rows={1} placeholder="np. odporny, wytrwały" /></div>
+                  <div className="space-y-2 sm:col-span-2"><Label htmlFor="card-type">Typ odpowiedzi</Label><select id="card-type" name="cardType" defaultValue="TRANSLATION" className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"><option value="TRANSLATION">Tłumaczenie na polski</option><option value="DEFINITION">Definicja po angielsku</option></select></div>
+                </div>
+                {error && <Alert variant="destructive" className="mt-4"><AlertDescription>{error}</AlertDescription></Alert>}
+                <div className="mt-4 flex justify-end"><Button type="submit" variant="secondary" disabled={pending}><Plus data-icon="inline-start" /> Dodaj fiszkę</Button></div>
+              </form>
+            </CardContent>
+          </Card>
+        </section>}
+      </div>
+    </main>
+  );
+}
+
+function LayersIcon() {
+  return <BookOpen className="size-4 text-primary" />;
 }

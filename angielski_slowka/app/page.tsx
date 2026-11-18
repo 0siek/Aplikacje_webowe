@@ -1,15 +1,20 @@
 import Link from 'next/link';
 import { connection } from 'next/server';
+import { ArrowRight, BookOpen, Check, Layers3, Plus, Sparkles } from 'lucide-react';
 import { getDecks } from '@/actions/deckActions';
-import { signOut } from '@/actions/authActions';
+import AppHeader from '@/components/AppHeader';
+import { Badge } from '@/components/ui/badge';
+import { buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 export const instant = false;
 
-const illustrations = [
-  { icon: '✦', bg: 'bg-[#edf3e7]', color: 'text-[#6d8963]' },
-  { icon: '↗', bg: 'bg-[#f4eee7]', color: 'text-[#a9805c]' },
-  { icon: '✧', bg: 'bg-[#e9f0f2]', color: 'text-[#718e9a]' },
-  { icon: '◉', bg: 'bg-[#f2eaf1]', color: 'text-[#987994]' },
+const deckAccents = [
+  'bg-emerald-50 text-emerald-800 ring-emerald-100',
+  'bg-amber-50 text-amber-800 ring-amber-100',
+  'bg-sky-50 text-sky-800 ring-sky-100',
+  'bg-violet-50 text-violet-800 ring-violet-100',
 ];
 
 export default async function DashboardPage() {
@@ -18,34 +23,119 @@ export default async function DashboardPage() {
   const cardCount = decks.reduce((sum, deck) => sum + deck.totalCards, 0);
   const mastered = decks.reduce((sum, deck) => sum + deck.masteredCards, 0);
   const averageProgress = cardCount ? Math.round((mastered / cardCount) * 100) : 0;
+  const firstDeck = decks[0];
 
-  return <main className="min-h-screen bg-[#f7f8f5] pb-12">
-    <header className="sticky top-0 z-20 border-b border-[#e8ece8] bg-[#f7f8f5]/95 backdrop-blur-lg"><div className="mx-auto flex h-[65px] max-w-[1240px] items-center justify-between px-4 sm:px-8">
-      <Link href="/" className="flex items-center gap-2.5"><span className="grid h-[35px] w-[35px] place-items-center rounded-[12px] bg-[#1f4033] text-[17px] font-bold text-[#d2f36b]">s.</span><span className="text-[18px] font-extrabold tracking-[-.6px] text-[#1f4033]">słówka<span className="text-[#76a25c]">.</span></span></Link>
-      <nav className="hidden items-center gap-7 sm:flex"><Link href="#zestawy" className="text-[12px] font-semibold text-[#4f5d53]">Moje zestawy</Link><Link href="#postepy" className="text-[12px] font-medium text-[#7c887f] hover:text-[#405344]">Postępy</Link></nav>
-      <div className="flex items-center gap-2"><Link href="/decks/import" className="flex h-[39px] items-center gap-1.5 rounded-[11px] border border-[#dce6d9] bg-white px-2.5 text-[10px] font-bold text-[#4e704b] transition hover:bg-[#f1f6ee] sm:px-3 sm:text-[11px]">↓ CSV</Link><Link href="/decks/new" className="flex h-[39px] items-center gap-2 rounded-[11px] bg-[#244a35] px-3.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-[#193d2a] sm:px-4 sm:text-[12px]"><span className="text-[17px] leading-none">+</span><span className="hidden xs:inline">Nowy zestaw</span><span className="xs:hidden">Utwórz</span></Link></div>
-    </div><form action={signOut} className="mx-auto flex max-w-[1240px] justify-end px-4 pb-2 sm:px-8"><button className="text-[10px] font-semibold text-[#7c887f] hover:text-[#405344]">Wyloguj</button></form></header>
-    <div className="mx-auto max-w-[1240px] px-4 sm:px-8">
-      <section className="grid gap-7 pb-7 pt-7 sm:pt-10 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-12 lg:pb-10 lg:pt-12">
-        <div><span className="inline-flex items-center gap-2 rounded-full border border-[#dce9d5] bg-[#edf5e9] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[.9px] text-[#60805e]"><span className="h-1.5 w-1.5 rounded-full bg-[#83aa75]"/>TWÓJ KĄCIK DO NAUKI</span>
-          <h1 className="mt-4 max-w-[550px] text-[34px] font-extrabold leading-[1.06] tracking-[-1.7px] text-[#273b2e] sm:text-[48px] lg:text-[52px]">Cześć! Gotowa na <span className="text-[#789968]">mały krok</span> do przodu?</h1>
-          <p className="mt-3 max-w-[410px] text-[12px] leading-[1.7] text-[#7d8a81] sm:mt-4 sm:text-[13px]">Kilka słówek dziennie to wielka różnica. Zaparz herbatę i wskakujemy w rytm! 🌿</p>
-          <Link href={decks[0] ? `/decks/${decks[0].id}/study` : '/decks/new'} className="mt-5 inline-flex h-[45px] items-center gap-2 rounded-[12px] bg-[#244a35] px-5 text-[12px] font-bold text-white shadow-[0_4px_10px_rgba(36,74,53,.15)] transition hover:-translate-y-0.5 hover:bg-[#193d2a] sm:mt-6">✦ <span>Zacznij naukę</span><span className="ml-1">→</span></Link>
-        </div>
-        <div className="relative hidden h-[224px] overflow-hidden rounded-[23px] border border-[#e8ece6] bg-[#edf2e9] sm:block lg:h-[260px]">
-          <div className="absolute -right-[65px] -top-[85px] h-[300px] w-[300px] rounded-full border border-[#d9e5d3]"/><div className="absolute -right-[22px] -top-[41px] h-[218px] w-[218px] rounded-full border border-[#d9e5d3]"/><div className="absolute right-[31px] top-[12px] h-[111px] w-[111px] rounded-full border border-[#d9e5d3]"/>
-          <div className="absolute left-[50%] top-[50%] flex h-[151px] w-[196px] -translate-x-1/2 -translate-y-1/2 rotate-[-7deg] flex-col justify-between rounded-[17px] border border-[#e1e8dc] bg-white p-4 shadow-[0_12px_35px_rgba(42,70,49,.11)] lg:left-[49%] lg:h-[170px] lg:w-[215px]"><span className="text-[8px] font-bold uppercase tracking-[1px] text-[#8b9a8c]">TODAY&apos;S WORD</span><span className="text-[28px] font-extrabold tracking-[-1px] text-[#2b4532] lg:text-[32px]">bloom</span><span className="text-[11px] text-[#768479]">rozkwitać, kwitnąć <span className="float-right text-[#83a574]">✿</span></span><span className="h-1 w-8 rounded-full bg-[#d5e8ce]"/></div>
-          <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full border border-[#e4eae1] bg-white px-3 py-2 shadow-sm"><span className="text-[12px] text-[#8daa76]">✧</span><span className="text-[9px] font-semibold text-[#647368]">małe kroki, wielkie efekty</span></div><div className="absolute right-[14%] top-[14%] text-[20px] text-[#9db792]">✧</div><div className="absolute bottom-[23%] right-[18%] text-[17px] text-[#a8bb99]">✦</div>
-        </div>
-      </section>
-      <section id="postepy" className="grid grid-cols-3 gap-2.5 sm:gap-4">
-        {[{label:'ZESTAWY',value:String(decks.length).padStart(2,'0'),sub:'gotowych do nauki',icon:'▤',color:'text-[#6c8965]',bg:'bg-[#eef4e9]'},{label:'FISZKI',value:String(cardCount).padStart(2,'0'),sub:'słówek w kolekcji',icon:'◈',color:'text-[#9b845c]',bg:'bg-[#f5f0e6]'},{label:'OPANOWANE',value:`${averageProgress}%`,sub:'średni postęp',icon:'↗',color:'text-[#728f97]',bg:'bg-[#eaf1f2]'}].map(item=><div key={item.label} className="rounded-[15px] border border-[#e7ebe5] bg-white p-3.5 sm:rounded-[17px] sm:p-5"><div className="flex items-center justify-between"><span className="text-[8px] font-bold tracking-[.8px] text-[#87928a] sm:text-[9px]">{item.label}</span><span className={`grid h-[25px] w-[25px] place-items-center rounded-[8px] ${item.bg} ${item.color} sm:h-[29px] sm:w-[29px]`}>{item.icon}</span></div><div className="mt-2 text-[22px] font-extrabold tracking-[-.5px] text-[#304336] sm:mt-3 sm:text-[27px]">{item.value}</div><div className="mt-0.5 text-[9px] text-[#929c94] sm:text-[10px]">{item.sub}</div></div>)}
-      </section>
-      <section id="zestawy" className="mt-8 sm:mt-10">
-        <div className="mb-4 flex items-end justify-between sm:mb-5"><div><h2 className="text-[20px] font-extrabold tracking-[-.6px] text-[#2d4133] sm:text-[22px]">Twoje zestawy</h2><p className="mt-1 text-[10px] text-[#89948c] sm:text-[11px]">Wybierz zestaw i ucz się we własnym tempie</p></div><Link href="/decks/new" className="hidden items-center gap-1 text-[11px] font-semibold text-[#547250] hover:text-[#2a4c32] sm:flex">+ Dodaj zestaw</Link></div>
-        {decks.length === 0 ? <div className="rounded-[18px] border border-dashed border-[#dce4d9] bg-white px-5 py-12 text-center"><span className="text-3xl">📚</span><h3 className="mt-3 text-[16px] font-bold text-[#33493a]">Zacznij swoją kolekcję</h3><p className="mt-1 text-[11px] text-[#89948c]">Utwórz zestaw i dodaj pierwsze słówka.</p><Link href="/decks/new" className="mt-4 inline-flex rounded-xl bg-[#244a35] px-4 py-2.5 text-[11px] font-bold text-white">Utwórz zestaw</Link></div> : <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">{decks.map((deck,index)=>{const art=illustrations[index%illustrations.length];return <article key={deck.id} className="group rounded-[16px] border border-[#e7ebe5] bg-white p-4 transition duration-200 hover:-translate-y-0.5 hover:border-[#d8e3d4] hover:shadow-[0_8px_22px_rgba(40,61,44,.06)] sm:rounded-[18px] sm:p-5"><div className="flex items-start justify-between"><span className={`grid h-[37px] w-[37px] place-items-center rounded-[12px] text-[18px] ${art.bg} ${art.color}`}>{art.icon}</span><span className="rounded-full bg-[#f3f5f1] px-2.5 py-1 text-[9px] font-medium text-[#78847b]">{deck.totalCards} fiszek</span></div><h3 className="mt-3 text-[15px] font-bold tracking-[-.2px] text-[#304336] sm:text-[16px]">{deck.title}</h3><p className="mt-1 min-h-[30px] line-clamp-2 text-[10px] leading-relaxed text-[#849088] sm:text-[11px]">{deck.description || 'Brak opisu zestawu.'}</p><div className="mt-4"><div className="mb-1.5 flex justify-between text-[9px] font-medium text-[#8a958d]"><span>Twój postęp</span><span className="font-bold text-[#617961]">{deck.progressPercent}%</span></div><div className="h-[5px] overflow-hidden rounded-full bg-[#eef1eb]"><div className="h-full rounded-full bg-[#8eac7d] transition-all" style={{width:`${deck.progressPercent}%`}}/></div></div><div className="mt-4 grid grid-cols-3 gap-2"><Link href={`/decks/${deck.id}/study`} className="flex h-[34px] items-center justify-center gap-1.5 rounded-[9px] bg-[#edf4e9] text-[9px] font-bold text-[#4e704b] transition hover:bg-[#e1edd9] sm:text-[10px]">✦ <span>Fiszki</span></Link><Link href={`/decks/${deck.id}/test`} className="flex h-[34px] items-center justify-center gap-1 rounded-[9px] bg-[#f6f0e5] text-[9px] font-bold text-[#987e53] transition hover:bg-[#efe6d5] sm:text-[10px]">✓ <span>Test</span></Link><Link href={`/decks/${deck.id}/sprint`} className="flex h-[34px] items-center justify-center gap-1 rounded-[9px] bg-[#eaf1f2] text-[9px] font-bold text-[#68858c] transition hover:bg-[#dce9eb] sm:text-[10px]">◷ <span>Sprint</span></Link></div><Link href={`/decks/${deck.id}/edit`} className="mt-3 inline-flex text-[9px] font-medium text-[#89958c] opacity-70 hover:text-[#4d674f] group-hover:opacity-100">Edytuj zestaw →</Link></article>;})}</div>}
-      </section>
-      <footer className="mt-9 flex flex-col items-center justify-between gap-2 border-t border-[#e8ece6] pt-4 text-[9px] text-[#89948c] sm:flex-row"><span>© 2024 słówka. Ucz się w swoim rytmie.</span><span className="flex items-center gap-1">Zrobione z <span className="text-[#86a875]">✦</span> do nauki</span></footer>
+  return (
+    <div className="min-h-screen bg-background">
+      <AppHeader active="decks" />
+      <main className="mx-auto max-w-7xl px-4 pb-16 pt-7 sm:px-6 sm:pt-10 lg:px-8">
+        <section className="relative isolate overflow-hidden rounded-3xl bg-primary text-primary-foreground shadow-sm">
+          <div aria-hidden="true" className="absolute -right-16 -top-28 -z-10 size-[390px] rounded-full border border-white/10 sm:-right-3 sm:-top-48 sm:size-[570px]" />
+          <div aria-hidden="true" className="absolute -right-4 -top-16 -z-10 size-[280px] rounded-full border border-white/10 sm:right-16 sm:-top-28 sm:size-[390px]" />
+          <div className="grid gap-8 px-6 py-8 sm:px-10 sm:py-10 lg:grid-cols-[1.2fr_.8fr] lg:items-center lg:px-12 lg:py-12">
+            <div className="max-w-2xl">
+              <Badge variant="outline" className="border-white/20 bg-white/10 text-primary-foreground">
+                <Sparkles data-icon="inline-start" /> TWÓJ CODZIENNY RYTM
+              </Badge>
+              <h1 className="mt-5 text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-[44px]">
+                Małe porcje. <span className="text-emerald-200">Wielkie postępy.</span>
+              </h1>
+              <p className="mt-3 max-w-lg text-sm leading-6 text-primary-foreground/75 sm:text-base">
+                Wróć do swoich słówek, zrób krótką powtórkę i utrwalaj angielski we własnym tempie.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href={firstDeck ? `/decks/${firstDeck.id}/study` : '/decks/new'} className={cn(buttonVariants({ variant: 'secondary', size: 'lg' }), 'bg-white text-primary hover:bg-white/90')}>
+                  <BookOpen data-icon="inline-start" /> Zacznij naukę <ArrowRight data-icon="inline-end" />
+                </Link>
+                <Link href="/decks/new" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'border-white/25 bg-white/5 text-primary-foreground hover:bg-white/10 hover:text-primary-foreground')}>
+                  <Plus data-icon="inline-start" /> Utwórz zestaw
+                </Link>
+              </div>
+            </div>
+
+            <Card className="hidden border-white/15 bg-white/10 text-primary-foreground shadow-none lg:block">
+              <CardHeader className="pb-3">
+                <CardDescription className="text-primary-foreground/65">Twoja kolekcja</CardDescription>
+                <CardTitle className="text-lg font-medium">Nauka, która mieści się w planie dnia</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end justify-between">
+                  <div><div className="text-4xl font-semibold tracking-tight">{String(cardCount).padStart(2, '0')}</div><div className="mt-1 text-xs text-primary-foreground/65">fiszek do powtórki</div></div>
+                  <div className="grid size-12 place-items-center rounded-2xl bg-white/10"><Layers3 className="size-5" /></div>
+                </div>
+                <div className="mt-6 flex items-center justify-between text-xs text-primary-foreground/75"><span>Średni postęp</span><span className="font-medium text-white">{averageProgress}%</span></div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full rounded-full bg-emerald-200 transition-all" style={{ width: `${averageProgress}%` }} /></div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        <section aria-label="Podsumowanie nauki" className="mt-5 grid gap-3 sm:grid-cols-3">
+          {[
+            { label: 'Zestawy', value: decks.length, hint: 'Twoje kolekcje', icon: Layers3 },
+            { label: 'Fiszki', value: cardCount, hint: 'Słówka i definicje', icon: BookOpen },
+            { label: 'Opanowane', value: `${averageProgress}%`, hint: `${mastered} dobrze znanych fiszek`, icon: Check },
+          ].map(({ label, value, hint, icon: Icon }) => (
+            <Card key={label} className="shadow-none transition-shadow hover:shadow-sm">
+              <CardContent className="flex items-center justify-between p-4 sm:p-5">
+                <div><p className="text-sm text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-semibold tracking-tight">{value}</p><p className="mt-1 text-xs text-muted-foreground">{hint}</p></div>
+                <span className="grid size-10 place-items-center rounded-xl bg-secondary text-primary"><Icon className="size-[18px]" /></span>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+
+        <section id="zestawy" className="mt-10 scroll-mt-24 sm:mt-12">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <div><h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Twoje zestawy</h2><p className="mt-1 text-sm text-muted-foreground">Wybierz zestaw i ćwicz tak, jak lubisz.</p></div>
+            <Link href="/decks/new" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'hidden sm:inline-flex')}><Plus data-icon="inline-start" /> Dodaj zestaw</Link>
+          </div>
+
+          {decks.length === 0 ? (
+            <Card className="border-dashed shadow-none">
+              <CardContent className="flex flex-col items-center px-6 py-14 text-center">
+                <span className="grid size-12 place-items-center rounded-2xl bg-secondary text-primary"><BookOpen className="size-5" /></span>
+                <h3 className="mt-4 text-base font-semibold">Twoja kolekcja zaczyna się tutaj</h3>
+                <p className="mt-1 max-w-sm text-sm text-muted-foreground">Utwórz pierwszy zestaw albo zaimportuj fiszki z pliku CSV.</p>
+                <div className="mt-5 flex flex-wrap justify-center gap-2">
+                  <Link href="/decks/new" className={buttonVariants({ size: 'sm' })}><Plus data-icon="inline-start" /> Utwórz zestaw</Link>
+                  <Link href="/decks/import" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Importuj CSV</Link>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {decks.map((deck, index) => (
+                <Card key={deck.id} className="group shadow-none transition-all hover:-translate-y-0.5 hover:shadow-md">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className={`grid size-10 shrink-0 place-items-center rounded-xl ring-1 ring-inset ${deckAccents[index % deckAccents.length]}`}><BookOpen className="size-[18px]" /></span>
+                      <Badge variant="secondary" className="font-normal">{deck.totalCards} {deck.totalCards === 1 ? 'fiszka' : 'fiszek'}</Badge>
+                    </div>
+                    <CardTitle className="pt-1 text-base font-semibold">{deck.title}</CardTitle>
+                    <CardDescription className="line-clamp-2 min-h-10 leading-5">{deck.description || 'Bez opisu — gotowy na Twoje słówka.'}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Postęp</span><span className="font-medium">{deck.progressPercent}%</span></div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${deck.progressPercent}%` }} /></div>
+                    <div className="mt-5 grid grid-cols-3 gap-2">
+                      <Link href={`/decks/${deck.id}/study`} className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }), 'px-2')}><BookOpen className="size-3.5" /> Fiszki</Link>
+                      <Link href={`/decks/${deck.id}/test`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'px-2')}>Test</Link>
+                      <Link href={`/decks/${deck.id}/sprint`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'px-2')}>Sprint</Link>
+                    </div>
+                    <Link href={`/decks/${deck.id}/edit`} className="mt-4 inline-flex text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Edytuj zestaw</Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+          <div className="mt-4 sm:hidden"><Link href="/decks/new" className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}><Plus data-icon="inline-start" /> Dodaj zestaw</Link></div>
+        </section>
+
+        <footer className="mt-12 flex flex-col gap-2 border-t pt-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} słówka. Ucz się w swoim rytmie.</span><span>Małe kroki, wielkie efekty.</span>
+        </footer>
+      </main>
     </div>
-  </main>;
+  );
 }

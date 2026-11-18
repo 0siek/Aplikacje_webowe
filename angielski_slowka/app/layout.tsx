@@ -6,7 +6,12 @@ export const metadata: Metadata = {
   description: 'Przyjazna aplikacja do nauki angielskich słówek i definicji.',
   applicationName: 'Słówka',
 };
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, maximumScale: 1, themeColor: '#f7f8f5' };
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#f8faf8',
+};
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return <html lang="pl" className="h-full antialiased"><body className="min-h-full">{children}</body></html>;
