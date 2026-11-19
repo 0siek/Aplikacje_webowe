@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, BookOpen, Check, CircleCheck, CircleHelp, Clock3, Layers3, RotateCw, Sparkles, X } from 'lucide-react';
 import { saveDeckProgress } from '@/actions/deckActions';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +56,11 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
   const [finished, setFinished] = useState(false);
   const [timeLeft, setTimeLeft] = useState(8);
   const [knownIds, setKnownIds] = useState<string[]>([]);
+  const answeredCardIds = useRef(new Set<string>());
+  const selectedAnswerRef = useRef<string | null>(null);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interactionCooldown = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interactionLocked = useRef(false);
 
   const cards = useMemo(() => [...deck.cards].sort((a, b) => a.masteryLevel - b.masteryLevel), [deck.cards]);
   const card = cards[position] ?? cards[0];
@@ -66,20 +71,39 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
     void saveDeckProgress(current.id, known).catch(() => undefined);
   }, []);
   const answerCard = useCallback((known: boolean) => {
-    if (!card || answers[position] !== undefined) return;
+    if (!card || answeredCardIds.current.has(card.id) || interactionLocked.current) return false;
+    answeredCardIds.current.add(card.id);
+    interactionLocked.current = true;
+    if (interactionCooldown.current) clearTimeout(interactionCooldown.current);
+    interactionCooldown.current = setTimeout(() => { interactionLocked.current = false; }, 350);
     setAnswers((old) => { const next = [...old]; next[position] = known; return next; });
     if (known) setKnownIds((old) => old.includes(card.id) ? old : [...old, card.id]);
     recordCard(card, known);
-  }, [answers, card, position, recordCard]);
+    return true;
+  }, [card, position, recordCard]);
   const goNext = useCallback(() => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    advanceTimer.current = null;
     if (position + 1 >= cards.length) { complete(); return; }
-    setPosition((old) => old + 1);
+    setPosition(position + 1);
     setFlipped(false);
     setSelectedAnswer(null);
+    selectedAnswerRef.current = null;
     setAnswerText('');
     setTimeLeft(8);
   }, [cards.length, complete, position]);
+  const scheduleAdvance = useCallback((delay: number) => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    advanceTimer.current = setTimeout(goNext, delay);
+  }, [goNext]);
   const restart = useCallback(() => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    if (interactionCooldown.current) clearTimeout(interactionCooldown.current);
+    advanceTimer.current = null;
+    interactionCooldown.current = null;
+    interactionLocked.current = false;
+    answeredCardIds.current.clear();
+    selectedAnswerRef.current = null;
     setRound((old) => old + 1);
     setPosition(0);
     setFlipped(false);
@@ -90,28 +114,41 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
     setTimeLeft(8);
   }, []);
 
+  useEffect(() => () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    if (interactionCooldown.current) clearTimeout(interactionCooldown.current);
+  }, []);
+
   useEffect(() => {
     if (mode !== 'sprint' || finished || !card || selectedAnswer !== null || currentAnswer !== undefined) return;
     const timer = window.setTimeout(() => {
-      if (timeLeft <= 1) { answerCard(false); return; }
+      if (timeLeft <= 1) {
+        if (answerCard(false)) {
+          selectedAnswerRef.current = '__timeout__';
+          setSelectedAnswer('__timeout__');
+          scheduleAdvance(700);
+        }
+        return;
+      }
       setTimeLeft((old) => old - 1);
     }, 1000);
     return () => window.clearTimeout(timer);
-  }, [answerCard, card, currentAnswer, finished, mode, selectedAnswer, timeLeft]);
+  }, [answerCard, card, currentAnswer, finished, mode, scheduleAdvance, selectedAnswer, timeLeft]);
 
-  useEffect(() => {
-    if (selectedAnswer === null) return;
-    const timer = window.setTimeout(() => {
-      if (position + 1 >= cards.length) complete();
-      else {
-        setPosition((old) => old + 1);
-        setSelectedAnswer(null);
-        setAnswerText('');
-        setTimeLeft(8);
-      }
-    }, 950);
-    return () => window.clearTimeout(timer);
-  }, [cards.length, complete, position, selectedAnswer]);
+  const chooseAnswer = (choice: string) => {
+    if (selectedAnswerRef.current !== null) return;
+    const correct = choice === card.back;
+    if (!answerCard(correct)) return;
+    selectedAnswerRef.current = choice;
+    setSelectedAnswer(choice);
+    scheduleAdvance(950);
+  };
+
+  const submitRecall = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const correct = answerText.trim().toLocaleLowerCase() === card.back.trim().toLocaleLowerCase();
+    if (answerCard(correct)) goNext();
+  };
 
   const isTest = mode === 'test';
   const isSprint = mode === 'sprint';
@@ -188,13 +225,13 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
                 <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">{isTest ? 'Wpisz swoją odpowiedź albo wybierz jedną z propozycji.' : 'Wybierz poprawną odpowiedź, zanim skończy się czas!'}</p>
               </CardContent></Card>}
 
-              {isFlashcards ? <div className="mx-auto mt-4 grid max-w-lg grid-cols-2 gap-3 sm:mt-5"><Button variant="outline" size="lg" className="border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => { answerCard(false); goNext(); }}><CircleHelp data-icon="inline-start" /> Powtórz</Button><Button size="lg" onClick={() => { answerCard(true); goNext(); }}><Check data-icon="inline-start" /> Znam</Button></div> : <>
-                {isTest && <form onSubmit={(event) => { event.preventDefault(); const correct = answerText.trim().toLocaleLowerCase() === card.back.trim().toLocaleLowerCase(); setAnswers((old) => { const next = [...old]; next[position] = correct; return next; }); if (correct) setKnownIds((old) => old.includes(card.id) ? old : [...old, card.id]); recordCard(card, correct); goNext(); }} className="mx-auto mt-4 flex max-w-3xl gap-2"><Input value={answerText} onChange={(event) => setAnswerText(event.target.value)} aria-label="Wpisz odpowiedź" placeholder="Wpisz swoją odpowiedź…" className="h-11" /><Button type="submit" disabled={!answerText.trim()} className="h-11">Sprawdź</Button></form>}
+              {isFlashcards ? <div className="mx-auto mt-4 grid max-w-lg grid-cols-2 gap-3 sm:mt-5"><Button variant="outline" size="lg" className="border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => { if (answerCard(false)) goNext(); }}><CircleHelp data-icon="inline-start" /> Powtórz</Button><Button size="lg" onClick={() => { if (answerCard(true)) goNext(); }}><Check data-icon="inline-start" /> Znam</Button></div> : <>
+                {isTest && <form onSubmit={submitRecall} className="mx-auto mt-4 flex max-w-3xl gap-2"><Input value={answerText} onChange={(event) => setAnswerText(event.target.value)} aria-label="Wpisz odpowiedź" placeholder="Wpisz swoją odpowiedź…" className="h-11" /><Button type="submit" disabled={!answerText.trim()} className="h-11">Sprawdź</Button></form>}
                 <div className="mx-auto mt-3 grid max-w-3xl grid-cols-1 gap-2.5 sm:grid-cols-2">{choices.map((choice, index) => {
                   const right = choice === card.back;
                   const selected = selectedAnswer === choice;
                   const style = selected ? right ? 'border-primary bg-secondary text-secondary-foreground' : 'border-destructive/50 bg-destructive/5 text-destructive' : selectedAnswer !== null && right ? 'border-primary/40 bg-secondary/60' : 'hover:border-primary/40 hover:bg-muted/50';
-                  return <button key={`${choice}-${index}`} type="button" disabled={selectedAnswer !== null} onClick={() => { setSelectedAnswer(choice); const correct = right; setAnswers((old) => { const next = [...old]; next[position] = correct; return next; }); if (correct) setKnownIds((old) => old.includes(card.id) ? old : [...old, card.id]); recordCard(card, correct); }} className={cn('flex min-h-14 items-center gap-3 rounded-xl border bg-card px-3.5 py-3 text-left text-sm transition-colors disabled:cursor-default', style)}><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-xs font-medium text-muted-foreground">{String.fromCharCode(65 + index)}</span><span className="flex-1 leading-5">{choice}</span>{selected && (right ? <Check className="size-4" /> : <X className="size-4" />)}</button>;
+                  return <button key={`${choice}-${index}`} type="button" disabled={selectedAnswer !== null} onClick={() => chooseAnswer(choice)} className={cn('flex min-h-14 items-center gap-3 rounded-xl border bg-card px-3.5 py-3 text-left text-sm transition-colors disabled:cursor-default', style)}><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-xs font-medium text-muted-foreground">{String.fromCharCode(65 + index)}</span><span className="flex-1 leading-5">{choice}</span>{selected && (right ? <Check className="size-4" /> : <X className="size-4" />)}</button>;
                 })}</div>
               </>}
 
