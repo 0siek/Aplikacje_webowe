@@ -62,7 +62,8 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
   const interactionCooldown = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interactionLocked = useRef(false);
 
-  const cards = useMemo(() => [...deck.cards].sort((a, b) => a.masteryLevel - b.masteryLevel), [deck.cards]);
+  // Keep this session's card order stable while async progress saves refresh deck data.
+  const [cards] = useState<StudyCard[]>(() => [...deck.cards].sort((a, b) => a.masteryLevel - b.masteryLevel));
   const card = cards[position] ?? cards[0];
   const currentAnswer = answers[position];
   const correctCount = answers.filter(Boolean).length;
