@@ -62,6 +62,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
   const [flipped, setFlipped] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [answerText, setAnswerText] = useState('');
+  const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [finished, setFinished] = useState(false);
   const [timeLeft, setTimeLeft] = useState(8);
@@ -109,6 +110,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
     setSelectedAnswer(null);
     selectedAnswerRef.current = null;
     setAnswerText('');
+    setShowCorrectAnswer(false);
     setTimeLeft(8);
   }, [cards.length, complete, position]);
   const scheduleAdvance = useCallback((delay: number) => {
@@ -128,6 +130,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
     setFlipped(false);
     setSelectedAnswer(null);
     setAnswerText('');
+    setShowCorrectAnswer(false);
     setAnswers([]);
     setFinished(false);
     setTimeLeft(8);
@@ -165,8 +168,18 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
 
   const submitRecall = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (selectedAnswerRef.current !== null) return;
     const correct = matchesAnswer(answerText, expectedAnswer);
-    if (answerCard(correct)) goNext();
+    if (!answerCard(correct)) return;
+    if (correct) {
+      goNext();
+      return;
+    }
+
+    selectedAnswerRef.current = '__recall_wrong__';
+    setSelectedAnswer('__recall_wrong__');
+    setShowCorrectAnswer(true);
+    scheduleAdvance(1500);
   };
 
   const progress = cards.length ? Math.round((position / cards.length) * 100) : 0;
@@ -244,7 +257,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
               </CardContent></Card>}
 
               {isFlashcards ? <div className="mx-auto mt-4 grid max-w-lg grid-cols-2 gap-3 sm:mt-5"><Button variant="outline" size="lg" className="border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => { if (answerCard(false)) goNext(); }}><CircleHelp data-icon="inline-start" /> Powtórz</Button><Button size="lg" onClick={() => { if (answerCard(true)) goNext(); }}><Check data-icon="inline-start" /> Znam</Button></div> : <>
-                {isTest && <form onSubmit={submitRecall} className="mx-auto mt-4 flex max-w-3xl gap-2"><Input value={answerText} onChange={(event) => setAnswerText(event.target.value)} aria-label="Wpisz odpowiedź" placeholder="Wpisz swoją odpowiedź…" className="h-11" /><Button type="submit" disabled={!answerText.trim()} className="h-11">Sprawdź</Button></form>}
+                {isTest && <><form onSubmit={submitRecall} className="mx-auto mt-4 flex max-w-3xl gap-2"><Input value={answerText} onChange={(event) => setAnswerText(event.target.value)} aria-label="Wpisz odpowiedź" placeholder="Wpisz swoją odpowiedź…" className="h-11" disabled={selectedAnswer !== null} /><Button type="submit" disabled={!answerText.trim() || selectedAnswer !== null} className="h-11">Sprawdź</Button></form>{showCorrectAnswer && <p role="status" aria-live="polite" className="mx-auto mt-3 max-w-3xl rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-center text-sm"><span className="font-medium">Niepoprawna odpowiedź.</span> Poprawna odpowiedź: <span className="font-semibold">{expectedAnswer}</span></p>}</>}
                 <div className="mx-auto mt-3 grid max-w-3xl grid-cols-1 gap-2.5 sm:grid-cols-2">{choices.map((choice, index) => {
                   const right = matchesAnswer(choice, expectedAnswer);
                   const selected = selectedAnswer === choice;
