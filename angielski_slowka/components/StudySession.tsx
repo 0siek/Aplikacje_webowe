@@ -179,7 +179,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
     selectedAnswerRef.current = '__recall_wrong__';
     setSelectedAnswer('__recall_wrong__');
     setShowCorrectAnswer(true);
-    scheduleAdvance(1500);
+    scheduleAdvance(3000);
   };
 
   const progress = cards.length ? Math.round((position / cards.length) * 100) : 0;
