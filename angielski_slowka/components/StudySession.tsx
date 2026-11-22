@@ -16,7 +16,17 @@ const modes = [
   { id: 'flashcards', label: 'Fiszki', description: 'Powtórz swoje słówka', icon: Layers3 },
   { id: 'test', label: 'Test', description: 'Sprawdź swoją wiedzę', icon: CircleCheck },
   { id: 'sprint', label: 'Sprint', description: '8 sekund na odpowiedź', icon: Clock3 },
+  { id: 'reverse', label: 'Odwrotnie', description: 'Polski → angielski', icon: RotateCw },
 ] as const;
+
+function answerAlternatives(answer: string) {
+  return answer.split('/').map((part) => part.trim()).filter(Boolean);
+}
+
+function matchesAnswer(input: string, expected: string) {
+  const normalizedInput = input.trim().toLocaleLowerCase();
+  return answerAlternatives(expected).some((answer) => answer.toLocaleLowerCase() === normalizedInput);
+}
 
 function stableShuffle<T>(items: T[], seed: string) {
   const score = (value: string) => [...value].reduce((total, char) => ((total * 31) + char.charCodeAt(0)) >>> 0, 7);
@@ -65,6 +75,14 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
   // Keep this session's card order stable while async progress saves refresh deck data.
   const [cards] = useState<StudyCard[]>(() => [...deck.cards].sort((a, b) => a.masteryLevel - b.masteryLevel));
   const card = cards[position] ?? cards[0];
+  const isTest = mode === 'test';
+  const isSprint = mode === 'sprint';
+  const isFlashcards = mode === 'flashcards';
+  // Tests and Sprint now default to Polish → English for translation cards.
+  // Definition cards have no Polish term, so retain their English → definition direction.
+  const reverseDirection = mode === 'reverse' || isTest || isSprint;
+  const question = card ? (reverseDirection && card.cardType === 'TRANSLATION' ? card.back : card.front) : '';
+  const expectedAnswer = card ? (reverseDirection && card.cardType === 'TRANSLATION' ? card.front : card.back) : '';
   const currentAnswer = answers[position];
   const correctCount = answers.filter(Boolean).length;
   const complete = useCallback(() => setFinished(true), []);
@@ -138,7 +156,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
 
   const chooseAnswer = (choice: string) => {
     if (selectedAnswerRef.current !== null) return;
-    const correct = choice === card.back;
+    const correct = matchesAnswer(choice, expectedAnswer);
     if (!answerCard(correct)) return;
     selectedAnswerRef.current = choice;
     setSelectedAnswer(choice);
@@ -147,21 +165,20 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
 
   const submitRecall = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const correct = answerText.trim().toLocaleLowerCase() === card.back.trim().toLocaleLowerCase();
+    const correct = matchesAnswer(answerText, expectedAnswer);
     if (answerCard(correct)) goNext();
   };
 
-  const isTest = mode === 'test';
-  const isSprint = mode === 'sprint';
-  const isFlashcards = mode === 'flashcards';
   const progress = cards.length ? Math.round((position / cards.length) * 100) : 0;
   const choices = useMemo(() => {
     if (!card) return [];
-    const pool = cards.filter((item) => item.id !== card.id).map((item) => item.back);
+    const getAnswer = (item: StudyCard) => reverseDirection && item.cardType === 'TRANSLATION' ? item.front : item.back;
+    const accepted = answerAlternatives(expectedAnswer);
+    const pool = cards.filter((item) => item.id !== card.id).flatMap((item) => answerAlternatives(getAnswer(item)));
     const shuffled = stableShuffle(pool, `${card.id}:${round}`).slice(0, 3);
     while (shuffled.length < 3) shuffled.push(['Nie wiem', 'Żadna z odpowiedzi', 'Spróbuję ponownie'][shuffled.length]);
-    return stableShuffle([card.back, ...shuffled], `${card.id}:${round}:answers`);
-  }, [card, cards, round]);
+    return stableShuffle([accepted[0] ?? expectedAnswer, ...shuffled], `${card.id}:${round}:answers`);
+  }, [card, cards, expectedAnswer, reverseDirection, round]);
 
   if (!card) return <main className="grid min-h-screen place-items-center bg-background px-4"><Card className="max-w-md text-center"><CardContent className="px-8 py-10"><span className="mx-auto grid size-12 place-items-center rounded-xl bg-secondary text-primary"><BookOpen /></span><h1 className="mt-4 text-xl font-semibold">Ten zestaw jest jeszcze pusty</h1><p className="mt-2 text-sm text-muted-foreground">Dodaj fiszki, aby rozpocząć naukę.</p><Link href={`/decks/${deck.id}/edit`} className={cn(buttonVariants(), 'mt-5')}>Dodaj fiszki</Link></CardContent></Card></main>;
 
@@ -173,7 +190,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
     <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft className="size-4" /><span className="hidden sm:inline">Wróć do zestawów</span></Link>
-        <div className="min-w-0 text-center"><p className="truncate text-xs text-muted-foreground">{isTest ? 'Test' : isSprint ? 'Szybki sprint' : 'Tryb nauki'}</p><p className="max-w-[42vw] truncate text-sm font-medium">{deck.title}</p></div>
+        <div className="min-w-0 text-center"><p className="truncate text-xs text-muted-foreground">{isTest ? 'Test' : isSprint ? 'Szybki sprint' : mode === 'reverse' ? 'Odwrotnie · Polski → angielski' : 'Tryb nauki'}</p><p className="max-w-[42vw] truncate text-sm font-medium">{deck.title}</p></div>
         <div className="flex items-center gap-1"><ThemeToggle /><Link href="/" aria-label="Zamknij naukę" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'text-muted-foreground')}><X className="size-4" /></Link></div>
       </div>
     </header>
@@ -199,7 +216,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
         <section className="min-w-0">
           <div className="mx-auto max-w-3xl">
             <div className="mb-5 flex items-end justify-between gap-3">
-              <div><Badge variant="outline">{isFlashcards ? 'FISZKI' : isTest ? 'TEST' : 'SPRINT'}</Badge><h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{isFlashcards ? 'Ucz się po swojemu' : isTest ? 'Sprawdź, co już wiesz' : 'Szybki sprint'}</h1><p className="mt-1 text-sm text-muted-foreground">{isFlashcards ? 'Obróć kartę i zaznacz, jak dobrze znasz odpowiedź.' : isTest ? 'Wybierz odpowiedź albo wpisz ją samodzielnie.' : 'Odpowiedz przed upływem czasu.'}</p></div>
+              <div><Badge variant="outline">{isFlashcards ? 'FISZKI' : isTest ? 'TEST' : isSprint ? 'SPRINT' : 'ODWROTNIE'}</Badge><h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{isFlashcards ? 'Ucz się po swojemu' : isTest ? 'Sprawdź, co już wiesz' : isSprint ? 'Szybki sprint' : 'Polski → angielski'}</h1><p className="mt-1 text-sm text-muted-foreground">{isFlashcards ? 'Obróć kartę i zaznacz, jak dobrze znasz odpowiedź.' : isTest ? 'Wpisz odpowiedź albo wybierz jedną z propozycji. Pytania z tłumaczeń są po polsku.' : isSprint ? 'Odpowiedz przed upływem czasu. Pytania z tłumaczeń są po polsku.' : 'Wybierz angielskie tłumaczenie polskiego słówka.'}</p></div>
               <Badge variant="secondary" className="shrink-0 tabular-nums">{String(position + 1).padStart(2, '0')} / {String(cards.length).padStart(2, '0')}</Badge>
             </div>
             <ProgressTrack value={progress} />
@@ -210,26 +227,26 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
               {isFlashcards ? <div className="card-perspective mt-6 h-[300px] w-full sm:mt-8 sm:h-[390px]">
                 <button type="button" onClick={() => setFlipped(!flipped)} aria-label={flipped ? 'Pokaż słówko' : 'Pokaż odpowiedź'} className={`card-flipper ${flipped ? 'is-flipped' : ''} relative h-full w-full text-left`}>
                   <span className="card-face absolute inset-0 flex flex-col rounded-2xl border bg-card p-5 shadow-sm sm:p-8">
-                    <span className="flex items-center justify-between"><Badge variant="secondary">SŁÓWKO PO ANGIELSKU</Badge><BookOpen className="size-4 text-muted-foreground" /></span>
-                    <span className="flex flex-1 flex-col items-center justify-center text-center"><span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Przetłumacz</span><span className="mt-4 break-words text-[clamp(32px,7vw,56px)] font-semibold leading-tight tracking-tight">{card.front}</span></span>
+                    <span className="flex items-center justify-between"><Badge variant="secondary">{reverseDirection && card.cardType === 'TRANSLATION' ? 'SŁÓWKO PO POLSKU' : 'SŁÓWKO PO ANGIELSKU'}</Badge><BookOpen className="size-4 text-muted-foreground" /></span>
+                    <span className="flex flex-1 flex-col items-center justify-center text-center"><span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Przetłumacz</span><span className="mt-4 break-words text-[clamp(32px,7vw,56px)] font-semibold leading-tight tracking-tight">{question}</span></span>
                     <span className="flex items-center justify-center gap-2 text-xs text-muted-foreground"><RotateCw className="size-3.5" /> Kliknij kartę, aby zobaczyć odpowiedź</span>
                   </span>
                   <span className="card-face card-back absolute inset-0 flex flex-col rounded-2xl border bg-secondary p-5 shadow-sm sm:p-8">
-                    <span className="flex items-center justify-between"><Badge variant="outline">{card.cardType === 'DEFINITION' ? 'DEFINICJA PO ANGIELSKU' : 'TŁUMACZENIE PO POLSKU'}</Badge><BookOpen className="size-4 text-muted-foreground" /></span>
-                    <span className="flex flex-1 items-center justify-center px-2 text-center text-[clamp(21px,4.4vw,36px)] font-medium leading-snug">{card.back}</span>
+                    <span className="flex items-center justify-between"><Badge variant="outline">{reverseDirection && card.cardType === 'TRANSLATION' ? 'SŁÓWKO PO ANGIELSKU' : card.cardType === 'DEFINITION' ? 'DEFINICJA PO ANGIELSKU' : 'TŁUMACZENIE PO POLSKU'}</Badge><BookOpen className="size-4 text-muted-foreground" /></span>
+                    <span className="flex flex-1 items-center justify-center px-2 text-center text-[clamp(21px,4.4vw,36px)] font-medium leading-snug">{reverseDirection && card.cardType === 'TRANSLATION' ? card.front : card.back}</span>
                     <span className="flex items-center justify-center gap-2 text-xs text-muted-foreground"><RotateCw className="size-3.5" /> Kliknij kartę, aby wrócić</span>
                   </span>
                 </button>
               </div> : <Card className="mt-6 text-center shadow-sm sm:mt-8"><CardContent className="flex min-h-[220px] flex-col items-center justify-center px-5 py-8 sm:min-h-[260px]">
-                <Badge variant="secondary">{card.cardType === 'DEFINITION' ? 'DEFINICJA PO ANGIELSKU' : 'PRZETŁUMACZ NA POLSKI'}</Badge>
-                <p className="mt-5 break-words text-[clamp(29px,6vw,48px)] font-semibold leading-tight tracking-tight">{card.front}</p>
+                <Badge variant="secondary">{reverseDirection && card.cardType === 'TRANSLATION' ? 'SŁÓWKO PO POLSKU' : card.cardType === 'DEFINITION' ? 'DEFINICJA PO ANGIELSKU' : 'PRZETŁUMACZ NA POLSKI'}</Badge>
+                <p className="mt-5 break-words text-[clamp(29px,6vw,48px)] font-semibold leading-tight tracking-tight">{question}</p>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">{isTest ? 'Wpisz swoją odpowiedź albo wybierz jedną z propozycji.' : 'Wybierz poprawną odpowiedź, zanim skończy się czas!'}</p>
               </CardContent></Card>}
 
               {isFlashcards ? <div className="mx-auto mt-4 grid max-w-lg grid-cols-2 gap-3 sm:mt-5"><Button variant="outline" size="lg" className="border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => { if (answerCard(false)) goNext(); }}><CircleHelp data-icon="inline-start" /> Powtórz</Button><Button size="lg" onClick={() => { if (answerCard(true)) goNext(); }}><Check data-icon="inline-start" /> Znam</Button></div> : <>
                 {isTest && <form onSubmit={submitRecall} className="mx-auto mt-4 flex max-w-3xl gap-2"><Input value={answerText} onChange={(event) => setAnswerText(event.target.value)} aria-label="Wpisz odpowiedź" placeholder="Wpisz swoją odpowiedź…" className="h-11" /><Button type="submit" disabled={!answerText.trim()} className="h-11">Sprawdź</Button></form>}
                 <div className="mx-auto mt-3 grid max-w-3xl grid-cols-1 gap-2.5 sm:grid-cols-2">{choices.map((choice, index) => {
-                  const right = choice === card.back;
+                  const right = matchesAnswer(choice, expectedAnswer);
                   const selected = selectedAnswer === choice;
                   const style = selected ? right ? 'border-primary bg-secondary text-secondary-foreground' : 'border-destructive/50 bg-destructive/5 text-destructive' : selectedAnswer !== null && right ? 'border-primary/40 bg-secondary/60' : 'hover:border-primary/40 hover:bg-muted/50';
                   return <button key={`${choice}-${index}`} type="button" disabled={selectedAnswer !== null} onClick={() => chooseAnswer(choice)} className={cn('flex min-h-14 items-center gap-3 rounded-xl border bg-card px-3.5 py-3 text-left text-sm transition-colors disabled:cursor-default', style)}><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-xs font-medium text-muted-foreground">{String.fromCharCode(65 + index)}</span><span className="flex-1 leading-5">{choice}</span>{selected && (right ? <Check className="size-4" /> : <X className="size-4" />)}</button>;
