@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import './globals.css';
 
@@ -15,5 +16,5 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
-  return <html lang="pl" className="h-full antialiased" suppressHydrationWarning><body className="min-h-full"><ThemeProvider>{children}</ThemeProvider></body></html>;
+  return <html lang="pl" className="h-full antialiased" suppressHydrationWarning><body className="min-h-full"><ThemeProvider>{children}</ThemeProvider><Analytics /></body></html>;
 }
