@@ -14,7 +14,8 @@ import type { StudyCard, StudyDeck } from '@/lib/types';
 
 const modes = [
   { id: 'flashcards', label: 'Fiszki', description: 'Powtórz swoje słówka', icon: Layers3 },
-  { id: 'test', label: 'Test', description: 'Sprawdź swoją wiedzę', icon: CircleCheck },
+  { id: 'study', label: 'Nauka', description: 'Wpisz lub wybierz odpowiedź', icon: BookOpen },
+  { id: 'test', label: 'Test', description: 'Odpowiadaj bez podpowiedzi', icon: CircleCheck },
   { id: 'sprint', label: 'Sprint', description: '8 sekund na odpowiedź', icon: Clock3 },
   { id: 'reverse', label: 'Odwrotnie', description: 'Polski → angielski', icon: RotateCw },
 ] as const;
@@ -77,11 +78,12 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
   const [cards] = useState<StudyCard[]>(() => [...deck.cards].sort((a, b) => a.masteryLevel - b.masteryLevel));
   const card = cards[position] ?? cards[0];
   const isTest = mode === 'test';
+  const isStudy = mode === 'study';
   const isSprint = mode === 'sprint';
   const isFlashcards = mode === 'flashcards';
   // Tests and Sprint now default to Polish → English for translation cards.
   // Definition cards have no Polish term, so retain their English → definition direction.
-  const reverseDirection = mode === 'reverse' || isTest || isSprint;
+  const reverseDirection = mode === 'reverse' || isTest || isStudy || isSprint;
   const question = card ? (reverseDirection && card.cardType === 'TRANSLATION' ? card.back : card.front) : '';
   const expectedAnswer = card ? (reverseDirection && card.cardType === 'TRANSLATION' ? card.front : card.back) : '';
   const currentAnswer = answers[position];
@@ -203,14 +205,14 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
     <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft className="size-4" /><span className="hidden sm:inline">Wróć do zestawów</span></Link>
-        <div className="min-w-0 text-center"><p className="truncate text-xs text-muted-foreground">{isTest ? 'Test' : isSprint ? 'Szybki sprint' : mode === 'reverse' ? 'Odwrotnie · Polski → angielski' : 'Tryb nauki'}</p><p className="max-w-[42vw] truncate text-sm font-medium">{deck.title}</p></div>
+        <div className="min-w-0 text-center"><p className="truncate text-xs text-muted-foreground">{isTest ? 'Test' : isStudy ? 'Nauka' : isSprint ? 'Szybki sprint' : mode === 'reverse' ? 'Odwrotnie · Polski → angielski' : 'Tryb nauki'}</p><p className="max-w-[42vw] truncate text-sm font-medium">{deck.title}</p></div>
         <div className="flex items-center gap-1"><ThemeToggle /><Link href="/" aria-label="Zamknij naukę" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'text-muted-foreground')}><X className="size-4" /></Link></div>
       </div>
     </header>
 
     <main className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 sm:pt-8 lg:px-8">
-      <div className="mb-5 flex gap-2 lg:hidden">
-        {modes.map(({ id, label, icon: Icon }) => <Button key={id} variant={mode === id ? 'secondary' : 'outline'} size="sm" className="flex-1" onClick={() => handleModeChange(id)}><Icon className="size-4" />{label}</Button>)}
+      <div className="mb-5 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+        {modes.map(({ id, label, icon: Icon }) => <Button key={id} variant={mode === id ? 'secondary' : 'outline'} size="sm" className="shrink-0" onClick={() => handleModeChange(id)}><Icon className="size-4" />{label}</Button>)}
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[250px_minmax(0,1fr)] xl:gap-8">
         <aside className="hidden lg:block">
@@ -229,7 +231,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
         <section className="min-w-0">
           <div className="mx-auto max-w-3xl">
             <div className="mb-5 flex items-end justify-between gap-3">
-              <div><Badge variant="outline">{isFlashcards ? 'FISZKI' : isTest ? 'TEST' : isSprint ? 'SPRINT' : 'ODWROTNIE'}</Badge><h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{isFlashcards ? 'Ucz się po swojemu' : isTest ? 'Sprawdź, co już wiesz' : isSprint ? 'Szybki sprint' : 'Polski → angielski'}</h1><p className="mt-1 text-sm text-muted-foreground">{isFlashcards ? 'Obróć kartę i zaznacz, jak dobrze znasz odpowiedź.' : isTest ? 'Wpisz odpowiedź albo wybierz jedną z propozycji. Pytania z tłumaczeń są po polsku.' : isSprint ? 'Odpowiedz przed upływem czasu. Pytania z tłumaczeń są po polsku.' : 'Wybierz angielskie tłumaczenie polskiego słówka.'}</p></div>
+              <div><Badge variant="outline">{isFlashcards ? 'FISZKI' : isStudy ? 'NAUKA' : isTest ? 'TEST' : isSprint ? 'SPRINT' : 'ODWROTNIE'}</Badge><h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{isFlashcards ? 'Ucz się po swojemu' : isStudy ? 'Ćwicz z podpowiedziami' : isTest ? 'Sprawdź, co już wiesz' : isSprint ? 'Szybki sprint' : 'Polski → angielski'}</h1><p className="mt-1 text-sm text-muted-foreground">{isFlashcards ? 'Obróć kartę i zaznacz, jak dobrze znasz odpowiedź.' : isStudy ? 'Wpisz odpowiedź albo wybierz jedną z propozycji. Pytania z tłumaczeń są po polsku.' : isTest ? 'Wpisz odpowiedź samodzielnie — bez podpowiedzi. Pytania z tłumaczeń są po polsku.' : isSprint ? 'Odpowiedz przed upływem czasu. Pytania z tłumaczeń są po polsku.' : 'Wybierz angielskie tłumaczenie polskiego słówka.'}</p></div>
               <Badge variant="secondary" className="shrink-0 tabular-nums">{String(position + 1).padStart(2, '0')} / {String(cards.length).padStart(2, '0')}</Badge>
             </div>
             <ProgressTrack value={progress} />
@@ -253,17 +255,17 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
               </div> : <Card className="mt-6 text-center shadow-sm sm:mt-8"><CardContent className="flex min-h-[220px] flex-col items-center justify-center px-5 py-8 sm:min-h-[260px]">
                 <Badge variant="secondary">{reverseDirection && card.cardType === 'TRANSLATION' ? 'SŁÓWKO PO POLSKU' : card.cardType === 'DEFINITION' ? 'DEFINICJA PO ANGIELSKU' : 'PRZETŁUMACZ NA POLSKI'}</Badge>
                 <p className="mt-5 break-words text-[clamp(29px,6vw,48px)] font-semibold leading-tight tracking-tight">{question}</p>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">{isTest ? 'Wpisz swoją odpowiedź albo wybierz jedną z propozycji.' : 'Wybierz poprawną odpowiedź, zanim skończy się czas!'}</p>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">{isTest ? 'Wpisz odpowiedź samodzielnie — nie wyświetlamy propozycji.' : isStudy ? 'Wpisz swoją odpowiedź albo wybierz jedną z propozycji.' : 'Wybierz poprawną odpowiedź, zanim skończy się czas!'}</p>
               </CardContent></Card>}
 
               {isFlashcards ? <div className="mx-auto mt-4 grid max-w-lg grid-cols-2 gap-3 sm:mt-5"><Button variant="outline" size="lg" className="border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => { if (answerCard(false)) goNext(); }}><CircleHelp data-icon="inline-start" /> Powtórz</Button><Button size="lg" onClick={() => { if (answerCard(true)) goNext(); }}><Check data-icon="inline-start" /> Znam</Button></div> : <>
-                {isTest && <><form onSubmit={submitRecall} className="mx-auto mt-4 flex max-w-3xl gap-2"><Input value={answerText} onChange={(event) => setAnswerText(event.target.value)} aria-label="Wpisz odpowiedź" placeholder="Wpisz swoją odpowiedź…" className="h-11" disabled={selectedAnswer !== null} /><Button type="submit" disabled={!answerText.trim() || selectedAnswer !== null} className="h-11">Sprawdź</Button></form>{showCorrectAnswer && <p role="status" aria-live="polite" className="mx-auto mt-3 max-w-3xl rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-center text-sm"><span className="font-medium">Niepoprawna odpowiedź.</span> Poprawna odpowiedź: <span className="font-semibold">{expectedAnswer}</span></p>}</>}
-                <div className="mx-auto mt-3 grid max-w-3xl grid-cols-1 gap-2.5 sm:grid-cols-2">{choices.map((choice, index) => {
+                {(isTest || isStudy) && <><form onSubmit={submitRecall} className="mx-auto mt-4 flex max-w-3xl gap-2"><Input value={answerText} onChange={(event) => setAnswerText(event.target.value)} aria-label="Wpisz odpowiedź" placeholder="Wpisz swoją odpowiedź…" className="h-11" disabled={selectedAnswer !== null} /><Button type="submit" disabled={!answerText.trim() || selectedAnswer !== null} className="h-11">Sprawdź</Button></form>{showCorrectAnswer && <p role="status" aria-live="polite" className="mx-auto mt-3 max-w-3xl rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-center text-sm"><span className="font-medium">Niepoprawna odpowiedź.</span> Poprawna odpowiedź: <span className="font-semibold">{expectedAnswer}</span></p>}</>}
+                {!isTest && <div className="mx-auto mt-3 grid max-w-3xl grid-cols-1 gap-2.5 sm:grid-cols-2">{choices.map((choice, index) => {
                   const right = matchesAnswer(choice, expectedAnswer);
                   const selected = selectedAnswer === choice;
                   const style = selected ? right ? 'border-primary bg-secondary text-secondary-foreground' : 'border-destructive/50 bg-destructive/5 text-destructive' : selectedAnswer !== null && right ? 'border-primary/40 bg-secondary/60' : 'hover:border-primary/40 hover:bg-muted/50';
                   return <button key={`${choice}-${index}`} type="button" disabled={selectedAnswer !== null} onClick={() => chooseAnswer(choice)} className={cn('flex min-h-14 items-center gap-3 rounded-xl border bg-card px-3.5 py-3 text-left text-sm transition-colors disabled:cursor-default', style)}><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-xs font-medium text-muted-foreground">{String.fromCharCode(65 + index)}</span><span className="flex-1 leading-5">{choice}</span>{selected && (right ? <Check className="size-4" /> : <X className="size-4" />)}</button>;
-                })}</div>
+                })}</div>}
               </>}
 
               <div className="mx-auto mt-5 flex max-w-3xl items-center justify-between border-t pt-4 text-xs text-muted-foreground"><span>{knownIds.length} opanowanych <span className="mx-1.5">·</span> {cards.length - knownIds.length} do nauki</span>{isFlashcards && <Button onClick={goNext} variant="ghost" size="sm">Pomiń kartę <ArrowRight data-icon="inline-end" /></Button>}</div>
