@@ -17,7 +17,6 @@ const modes = [
   { id: 'study', label: 'Nauka', description: 'Wpisz lub wybierz odpowiedź', icon: BookOpen },
   { id: 'test', label: 'Test', description: 'Odpowiadaj bez podpowiedzi', icon: CircleCheck },
   { id: 'sprint', label: 'Sprint', description: '8 sekund na odpowiedź', icon: Clock3 },
-  { id: 'reverse', label: 'Odwrotnie', description: 'Polski → angielski', icon: RotateCw },
 ] as const;
 
 function answerAlternatives(answer: string) {
@@ -83,7 +82,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
   const isFlashcards = mode === 'flashcards';
   // Tests and Sprint now default to Polish → English for translation cards.
   // Definition cards have no Polish term, so retain their English → definition direction.
-  const reverseDirection = mode === 'reverse' || isTest || isStudy || isSprint;
+  const reverseDirection = isTest || isStudy || isSprint;
   const question = card ? (reverseDirection && card.cardType === 'TRANSLATION' ? card.back : card.front) : '';
   const expectedAnswer = card ? (reverseDirection && card.cardType === 'TRANSLATION' ? card.front : card.back) : '';
   const currentAnswer = answers[position];
@@ -205,7 +204,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
     <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft className="size-4" /><span className="hidden sm:inline">Wróć do zestawów</span></Link>
-        <div className="min-w-0 text-center"><p className="truncate text-xs text-muted-foreground">{isTest ? 'Test' : isStudy ? 'Nauka' : isSprint ? 'Szybki sprint' : mode === 'reverse' ? 'Odwrotnie · Polski → angielski' : 'Tryb nauki'}</p><p className="max-w-[42vw] truncate text-sm font-medium">{deck.title}</p></div>
+        <div className="min-w-0 text-center"><p className="truncate text-xs text-muted-foreground">{isTest ? 'Test' : isStudy ? 'Nauka' : isSprint ? 'Szybki sprint' : 'Tryb nauki'}</p><p className="max-w-[42vw] truncate text-sm font-medium">{deck.title}</p></div>
         <div className="flex items-center gap-1"><ThemeToggle /><Link href="/" aria-label="Zamknij naukę" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'text-muted-foreground')}><X className="size-4" /></Link></div>
       </div>
     </header>
@@ -231,7 +230,7 @@ export default function StudySession({ deck, initialMode = 'flashcards' }: { dec
         <section className="min-w-0">
           <div className="mx-auto max-w-3xl">
             <div className="mb-5 flex items-end justify-between gap-3">
-              <div><Badge variant="outline">{isFlashcards ? 'FISZKI' : isStudy ? 'NAUKA' : isTest ? 'TEST' : isSprint ? 'SPRINT' : 'ODWROTNIE'}</Badge><h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{isFlashcards ? 'Ucz się po swojemu' : isStudy ? 'Ćwicz z podpowiedziami' : isTest ? 'Sprawdź, co już wiesz' : isSprint ? 'Szybki sprint' : 'Polski → angielski'}</h1><p className="mt-1 text-sm text-muted-foreground">{isFlashcards ? 'Obróć kartę i zaznacz, jak dobrze znasz odpowiedź.' : isStudy ? 'Wpisz odpowiedź albo wybierz jedną z propozycji. Pytania z tłumaczeń są po polsku.' : isTest ? 'Wpisz odpowiedź samodzielnie — bez podpowiedzi. Pytania z tłumaczeń są po polsku.' : isSprint ? 'Odpowiedz przed upływem czasu. Pytania z tłumaczeń są po polsku.' : 'Wybierz angielskie tłumaczenie polskiego słówka.'}</p></div>
+              <div><Badge variant="outline">{isFlashcards ? 'FISZKI' : isStudy ? 'NAUKA' : isTest ? 'TEST' : 'SPRINT'}</Badge><h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{isFlashcards ? 'Ucz się po swojemu' : isStudy ? 'Ćwicz z podpowiedziami' : isTest ? 'Sprawdź, co już wiesz' : 'Szybki sprint'}</h1><p className="mt-1 text-sm text-muted-foreground">{isFlashcards ? 'Obróć kartę i zaznacz, jak dobrze znasz odpowiedź.' : isStudy ? 'Wpisz odpowiedź albo wybierz jedną z propozycji. Pytania z tłumaczeń są po polsku.' : isTest ? 'Wpisz odpowiedź samodzielnie — bez podpowiedzi. Pytania z tłumaczeń są po polsku.' : 'Odpowiedz przed upływem czasu. Pytania z tłumaczeń są po polsku.'}</p></div>
               <Badge variant="secondary" className="shrink-0 tabular-nums">{String(position + 1).padStart(2, '0')} / {String(cards.length).padStart(2, '0')}</Badge>
             </div>
             <ProgressTrack value={progress} />
